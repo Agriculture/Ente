@@ -1,3 +1,10 @@
 depends on:
 	- python (>= 2.5.2)
 	- pyglet (>= 1.1.2)
+
+run it:
+	$ make
+
+control:
+	Esc: Quit the program
+	Arrows: Scroll the terrain
