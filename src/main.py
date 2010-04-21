@@ -21,7 +21,7 @@ class SpaceGameWindow(window.Window):
 	#init the camera to the middle of the board, not important
 	camera_x = -13*tile_width
 	camera_y = 6*tile_height
-	scroll_speed = 5
+	scroll_speed = 10
 	
 	terrain = []
 
@@ -34,25 +34,7 @@ class SpaceGameWindow(window.Window):
 
 	def init_objects(self):
 							
-		cube_image = pyglet.image.load('data/room_60.png')
-		cube_not_image = pyglet.image.load('data/floor_60.png')
-		
-		rows = 30
-		columns = 30
-		print str(rows)+" rows "+str(columns)+" columns is "+str(rows*columns)+" cubes"
-		
-		for i in range(rows, 0, -1):
-			for j in range(columns, 0, -1):
-				group = pyglet.graphics.OrderedGroup(i - j)
-				if random.randint(0,1)==1:
-					image = cube_image
-				else:
-					image = cube_not_image
-				self.terrain.append(ente.Terrain(image, i, j, 
-						self.camera_x, self.camera_y, 
-						self.screen_width, self.screen_height,
-						self.tile_width, self.tile_height,
-						batch=self.batch, group=group))
+		self.stupid()
 		
 #		self.puddle = ente.Ente(puddle_image, 30*5+20, 10*5+5, 5, 5,
 #			batch=self.batch, group=graphics.OrderedGroup(-5*2+1))
@@ -92,13 +74,42 @@ class SpaceGameWindow(window.Window):
 		elif self.keys[key.UP]:
 			space.camera_y = space.camera_y - 1*self.scroll_speed
 			space.update_camera()
+		elif self.keys[key.RETURN]:
+			self.stupid()
 		
 	def update_camera(self):
 		for object in self.terrain:
 				object.update_camera(self.camera_x, self.camera_y, 
-					self.screen_width, self.screen_height,
-					self.tile_width, self.tile_height,
-					batch=self.batch)
+					self.tile_width, self.tile_height)
+		
+	def stupid(self):	
+		room_image = pyglet.image.load('data/room_60.png')
+		floor_image = pyglet.image.load('data/floor_60.png')
+		
+		bin = pyglet.image.atlas.TextureBin()
+		room_texture = bin.add(room_image)
+		floor_texture = bin.add(floor_image)	
+		
+		rows = 30
+		columns = 30
+		
+		for object in self.terrain:
+			object.delete()
+			
+		self.terrain = []
+			
+		self.batch = pyglet.graphics.Batch()
+		
+		for i in range(rows):
+			for j in range(columns, 0, -1):
+				if random.randint(0,1)==1:
+					image = room_texture
+				else:
+					image = floor_texture
+				self.terrain.append(ente.Terrain(image, i, j, 
+						self.camera_x, self.camera_y, 
+						self.tile_width, self.tile_height,
+						batch=self.batch))	
 		
 if __name__ == "__main__":
 	# Someone is launching this directly

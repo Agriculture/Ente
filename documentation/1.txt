@@ -1,0 +1,2 @@
+wie macht man 2D schneller?
+man benutzt 3D! http://groups.google.com/group/pyglet-users/browse_thread/thread/898d95596355b5/23a20a9c9aa4eee1?lnk=gst&q=slow#23a20a9c9aa4eee1
