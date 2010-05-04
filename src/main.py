@@ -14,12 +14,10 @@ class SpaceGameWindow(window.Window):
 	batch = pyglet.graphics.Batch()
 	
 	screen_width = 600
-	screen_height = 500
+	screen_height = 400
 	
 	tile_width = 60
 	tile_height = 40
-	
-	scroll_speed = 10
 	
 	rows = 30
 	columns = 30
@@ -88,15 +86,13 @@ class SpaceGameWindow(window.Window):
 		transparent_image = pyglet.image.load('data/transparent_60.png')
 		monster_image = pyglet.image.load('data/monster_60.png')
 		
+		# pack all images in one bin
+		# so they stay inorder
 		bin = pyglet.image.atlas.TextureBin()
 		room_texture = bin.add(room_image)
 		floor_texture = bin.add(floor_image)
-		transparent_texture = bin.add(transparent_image)
+		self.transparent_texture = bin.add(transparent_image)
 		self.monster_texture = bin.add(monster_image)
-		
-		#init the camera to the middle of the board, not important
-		self.camera_x = -13 * self.tile_width
-		self.camera_y = 6 * self.tile_height
 		
 		self.background = []
 		self.foreground = []
@@ -116,22 +112,49 @@ class SpaceGameWindow(window.Window):
 					image = floor_texture
 					state = "accessible"
 				line1.append(ente.Tile(state, image, i, j, 
-						self.camera_x, self.camera_y, 
 						self.tile_width, self.tile_height,
 						batch=self.batch))	
-				line2.append(ente.Tile("nonoccupied", transparent_texture, i, j, 
-						self.camera_x, self.camera_y, 
+				line2.append(ente.Tile("nonoccupied", self.transparent_texture, i, j, 
 						self.tile_width, self.tile_height,
 						batch=self.batch))	
 
 	def init_hero(self):
 		check = True
 		while check:
-			hero_x = random.randint(0, self.rows)
-			hero_y = random.randint(0, self.columns)
+			hero_x = random.randint(0, self.rows - 1)
+			hero_y = random.randint(0, self.columns - 1)
 			if (self.background[hero_x][hero_y].state == "accessible"):
 				check = False
+
+		# find the hero ;)
+		# we created the columns backwards, so (columns - y)
+		# plus the half of the screen
+		self.camera_x = - (hero_x + (self.columns - hero_y)) * self.tile_width//2 + self.screen_width//2
+		self.camera_y = - ((self.columns - hero_y) - hero_x) * self.tile_height//2 + self.screen_height//2
+		print self.camera_x, self.camera_y
+		self.update_camera()
+
 		self.foreground[hero_x][hero_y].image = self.monster_texture
+		self.characters = []
+		self.characters.append(ente.Person(hero_x, hero_y))
+
+	def move_hero(self, x, y):
+		old_x = self.characters[0].x
+		old_y = self.characters[0].y
+
+		new_x = old_x + x
+		new_y = old_y + y
+		
+		# out of screen?
+		if(new_x < 0 or new_y < 0 or new_x >= self.rows or new_y >= self.columns):
+			return
+
+		# place blocked?
+		if(self.background[new_x][new_y].state == "nonaccessible"):
+			return
+		
+		foreground[old_x][old_y].image = self.transparent_texture
+		foreground[new_x][new_y].image = self.monster_image
 
 if __name__ == "__main__":
 	# Someone is launching this directly
