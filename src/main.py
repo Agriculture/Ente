@@ -16,9 +16,11 @@ class SpaceGameWindow(window.Window):
 	screen_width = 600
 	screen_height = 400
 	
+	# one thingy on the map
 	tile_width = 60
 	tile_height = 40
 	
+	# basicly the size of the map
 	rows = 30
 	columns = 30
 
@@ -28,10 +30,12 @@ class SpaceGameWindow(window.Window):
 		window.Window.__init__(self, width=self.screen_width,
 			height=self.screen_height, *args, **kwargs)
 		self.init_objects()
+
+		self.move_available = 0
 		
 	def init_objects(self):
 							
-		self.stupid()
+		self.init_map()
 		self.init_hero()
 
 
@@ -43,34 +47,50 @@ class SpaceGameWindow(window.Window):
 			self.dispatch_events()
 			self.clear()
 
-			#Tick the clock
+			#clocke is needed for fps
 			clock.tick()
 			
+			#also handles the key events if needed
 			self.check_keys()
 				
-			#Gets fps and draw it
+			#Gets fps and make it visible
 			self.set_caption("fps: "+str(round(clock.get_fps())))
-				
+			
+			# updates the map
 			self.draw()
 
 			#update the screen
 			self.flip()
 
+
 	def check_keys(self):
-		self.camera_x = 0
-		self.camera_y = 0
+
+		move_x = 0
+		move_y = 0
+		action = False
 		if self.keys[key.RIGHT]:
-			space.camera_x = -self.scroll_speed
-			space.update_camera()	
-		if self.keys[key.LEFT]:
-			space.camera_x = self.scroll_speed
-			space.update_camera()	
-		if self.keys[key.DOWN]:
-			space.camera_y = self.scroll_speed
-			space.update_camera()	
-		if self.keys[key.UP]:
-			space.camera_y = -self.scroll_speed
-			space.update_camera()
+			move_x = 1
+			action = True
+		elif self.keys[key.LEFT]:
+			move_x = -1
+			action = True
+		elif self.keys[key.UP]:
+			move_y = 1
+			action = True
+		elif self.keys[key.DOWN]:
+			move_y = -1
+			action = True
+
+		#if it would always available it would be too fast
+		if(action and (self.move_available <= 0)):
+				self.move_hero(move_x, move_y)
+				self.move_available = 0.5
+		else:
+			# decrease it wrt. to fps (if possible)
+			if(clock.get_fps() > 0):
+				self.move_available -= 1/clock.get_fps()
+
+			
 		
 	def update_camera(self):
 		for line in self.background:
@@ -80,7 +100,11 @@ class SpaceGameWindow(window.Window):
 			for object in line:
 				object.update_camera(self.camera_x, self.camera_y)
 		
-	def stupid(self):	
+	def init_map(self):	
+		# every point on the map has a background_image
+		# only if this point is occupied there is a foreground_image
+		# if unoccupied there is a transparent_image which can be replaced
+		# (so all images stay inorder)
 		room_image = pyglet.image.load('data/room_60.png')
 		floor_image = pyglet.image.load('data/floor_60.png')
 		transparent_image = pyglet.image.load('data/transparent_60.png')
@@ -105,7 +129,7 @@ class SpaceGameWindow(window.Window):
 			self.background.append(line1)
 			self.foreground.append(line2)
 			for j in range(self.columns, 0, -1):
-				if random.randint(0,1)==1:
+				if random.randint(0,4)==1:
 					image = room_texture
 					state = "nonaccessible"
 				else:
@@ -131,19 +155,21 @@ class SpaceGameWindow(window.Window):
 		# plus the half of the screen
 		self.camera_x = - (hero_x + (self.columns - hero_y)) * self.tile_width//2 + self.screen_width//2
 		self.camera_y = - ((self.columns - hero_y) - hero_x) * self.tile_height//2 + self.screen_height//2
-		print self.camera_x, self.camera_y
 		self.update_camera()
 
+		# print the texture of the hero in the foreground
 		self.foreground[hero_x][hero_y].image = self.monster_texture
 		self.characters = []
 		self.characters.append(ente.Person(hero_x, hero_y))
 
 	def move_hero(self, x, y):
-		old_x = self.characters[0].x
-		old_y = self.characters[0].y
+		hero = self.characters[0]
+		old_x = hero.x
+		old_y = hero.y
 
+		# columns are backwards
 		new_x = old_x + x
-		new_y = old_y + y
+		new_y = old_y - y
 		
 		# out of screen?
 		if(new_x < 0 or new_y < 0 or new_x >= self.rows or new_y >= self.columns):
@@ -153,8 +179,16 @@ class SpaceGameWindow(window.Window):
 		if(self.background[new_x][new_y].state == "nonaccessible"):
 			return
 		
-		foreground[old_x][old_y].image = self.transparent_texture
-		foreground[new_x][new_y].image = self.monster_image
+		hero.x = new_x
+		hero.y = new_y
+
+		self.foreground[old_x][old_y].image = self.transparent_texture
+		self.foreground[new_x][new_y].image = self.monster_texture
+
+#		self.camera_x = (y + x) * self.tile_width//2
+#		self.camera_y = (y + x) * self.tile_height//2
+#		self.update_camera()
+
 
 if __name__ == "__main__":
 	# Someone is launching this directly
